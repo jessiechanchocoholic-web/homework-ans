@@ -1,0 +1,5 @@
+# Cloudflare Pages：靜態 index.html + functions/api/analyze.js
+# Key 唔好寫喺度，用 Dashboard → Variables and Secrets 加 OPENROUTER_API_KEY
+name = "homework-ans"
+compatibility_date = "2025-10-01"
+pages_build_output_dir = "."

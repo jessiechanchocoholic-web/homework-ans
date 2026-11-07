@@ -352,10 +352,10 @@
   <div class="model-bar">
     <label for="modelSelect">揀 AI</label>
     <select id="modelSelect">
-      <option value="Claude-Haiku-5.5" selected>準確 Claude-Haiku-5.5（預設）</option>
-      <option value="Claude-Sonnet-5.5">最準 Claude-Sonnet-5.5（慢·貴）</option>
+      <option value="default" selected>準確（預設）</option>
+      <option value="premium">最準（慢·貴）</option>
     </select>
-    <div class="model-hint">預設已準確；每頁會自動分開送，唔會超時。特難題先揀「最準」</div>
+    <div class="model-hint">預設已準確；每頁會自動分開送，唔會超時。特難題先揀「最準」。AI 經 Cloudflare 伺服器經 OpenRouter 呼叫（唔經 Poe／AppToPub）。</div>
   </div>
   <div class="action-bar" id="actionBar">
     <button class="btn-main" id="btnAnalyze" disabled>
@@ -426,7 +426,7 @@
   var imgCountLabel = document.getElementById('imgCountLabel');
   var btnAnalyze = document.getElementById('btnAnalyze');
   var modelSelect = document.getElementById('modelSelect');
-  var MODEL_KEY = 'hwModel2';
+  var MODEL_KEY = 'hwModelStandalone1';
   var usedModel = '';
   try { var savedModel = localStorage.getItem(MODEL_KEY); if (savedModel && modelSelect.querySelector('option[value="' + savedModel + '"]')) modelSelect.value = savedModel; } catch (_e) {}
   modelSelect.addEventListener('change', function() { try { localStorage.setItem(MODEL_KEY, modelSelect.value); } catch (_e) {} });
@@ -595,30 +595,9 @@
     analyzeHomework();
   });
 
-  /* ── Handler ── */
+  /* ── Handler（獨立版：唔再用 window.Poe）── */
   var currentContent = '';
-  window.Poe.registerHandler('answer-handler', function(result) {
-    var msg = result.responses[0];
-    if (msg.status === 'error') {
-      loadingSection.style.display = 'none';
-      showError(msg.statusText || '分析時發生錯誤，請再試一次');
-      isAnalyzing = false;
-      return;
-    }
-    if (msg.status === 'incomplete') {
-      currentContent = sanitizeModelOutput(msg.content);
-      if (!currentContent) { loadingSection.style.display = 'block'; return; } // 仲喺 thinking：只顯示載入中
-      loadingSection.style.display = 'none';
-      renderCurrentResult(currentContent, false);
-      return;
-    }
-    if (msg.status === 'complete') {
-      loadingSection.style.display = 'none';
-      currentContent = sanitizeModelOutput(msg.content);
-      renderCurrentResult(currentContent, true);
-      isAnalyzing = false;
-    }
-  });
+  var API_ANALYZE = '/api/analyze';
 
   async function analyzeHomework() {
     isAnalyzing = true;
@@ -685,65 +664,68 @@
       '- 直接答，唔使開場白；盡量短，唔好長篇推理';
   }
 
-  function askOnePage(file, pageIndex, pageTotal) {
+  function fileToDataUrl(file) {
     return new Promise(function(resolve, reject) {
-      var handlerName = 'answer-page-' + pageIndex + '-' + Date.now();
+      var reader = new FileReader();
+      reader.onload = function() { resolve(reader.result); };
+      reader.onerror = function() { reject(new Error('讀取相片失敗')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function askOnePage(file, pageIndex, pageTotal) {
+    return new Promise(async function(resolve, reject) {
       var settled = false;
       var timer = setTimeout(function() {
         if (settled) return;
         settled = true;
-        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
         reject(new Error('Request timed out after 120 seconds'));
       }, 110000);
 
-      window.Poe.registerHandler(handlerName, function(result) {
-        var msg = result.responses && result.responses[0];
-        if (!msg) return;
-        if (msg.status === 'error') {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-          reject(new Error(msg.statusText || '分析時發生錯誤'));
-          return;
-        }
-        if (msg.status === 'incomplete') {
-          var mid = sanitizeModelOutput(msg.content);
-          if (mid) {
-            var midShow = pageTotal > 1 ? ('## 第 ' + pageIndex + ' 頁\n\n' + mid) : mid;
-            var prev = window.__hwParts || [];
-            currentContent = sanitizeModelOutput(prev.concat([midShow]).join('\n\n'));
-            loadingSection.style.display = 'none';
-            renderCurrentResult(currentContent, false);
-          }
-          return;
-        }
-        if (msg.status === 'complete') {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-          var clean = sanitizeModelOutput(msg.content);
-          if (pageTotal > 1 && clean) clean = '## 第 ' + pageIndex + ' 頁\n\n' + clean;
-          resolve(clean || '');
-        }
-      });
+      try {
+        var dataUrl = await fileToDataUrl(file);
+        var comma = dataUrl.indexOf(',');
+        var meta = dataUrl.slice(0, comma);
+        var b64 = dataUrl.slice(comma + 1);
+        var mimeMatch = /data:([^;]+)/.exec(meta);
+        var mimeType = (mimeMatch && mimeMatch[1]) || file.type || 'image/jpeg';
 
-      window.Poe.sendUserMessage('@' + usedModel + ' ' + buildPrompt(pageIndex, pageTotal), {
-        handler: handlerName,
-        stream: true,
-        openChat: false,
-        attachments: [file],
-        parameters: {}
-      }).catch(function(err) {
+        var resp = await fetch(API_ANALYZE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: buildPrompt(pageIndex, pageTotal),
+            imageBase64: b64,
+            mimeType: mimeType,
+            modelTier: usedModel || 'default',
+            pageIndex: pageIndex,
+            pageTotal: pageTotal
+          })
+        });
+
+        var data = null;
+        try { data = await resp.json(); } catch (_e) { data = null; }
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
+
+        if (!resp.ok) {
+          var msg = (data && (data.error || data.message)) || ('伺服器錯誤 ' + resp.status);
+          reject(new Error(msg));
+          return;
+        }
+        var clean = sanitizeModelOutput((data && data.content) || '');
+        if (pageTotal > 1 && clean) clean = '## 第 ' + pageIndex + ' 頁\n\n' + clean;
+        resolve(clean || '');
+      } catch (err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         reject(err);
-      });
+      }
     });
   }
+
   function renderCurrentResult(content, isComplete) {
     currentResult.style.display = 'block';
     var clean = sanitizeModelOutput(content);
