@@ -1,0 +1,7 @@
+{
+  "name": "homework-ans",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+  "vars": { "MODEL": "Claude-Haiku-5.5" }
+}

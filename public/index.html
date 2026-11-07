@@ -597,28 +597,6 @@
 
   /* ── Handler ── */
   var currentContent = '';
-  window.Poe.registerHandler('answer-handler', function(result) {
-    var msg = result.responses[0];
-    if (msg.status === 'error') {
-      loadingSection.style.display = 'none';
-      showError(msg.statusText || '分析時發生錯誤，請再試一次');
-      isAnalyzing = false;
-      return;
-    }
-    if (msg.status === 'incomplete') {
-      currentContent = sanitizeModelOutput(msg.content);
-      if (!currentContent) { loadingSection.style.display = 'block'; return; } // 仲喺 thinking：只顯示載入中
-      loadingSection.style.display = 'none';
-      renderCurrentResult(currentContent, false);
-      return;
-    }
-    if (msg.status === 'complete') {
-      loadingSection.style.display = 'none';
-      currentContent = sanitizeModelOutput(msg.content);
-      renderCurrentResult(currentContent, true);
-      isAnalyzing = false;
-    }
-  });
 
   async function analyzeHomework() {
     isAnalyzing = true;
@@ -685,64 +663,78 @@
       '- 直接答，唔使開場白；盡量短，唔好長篇推理';
   }
 
-  function askOnePage(file, pageIndex, pageTotal) {
+  function fileToDataUrl(file) {
     return new Promise(function(resolve, reject) {
-      var handlerName = 'answer-page-' + pageIndex + '-' + Date.now();
-      var settled = false;
-      var timer = setTimeout(function() {
-        if (settled) return;
-        settled = true;
-        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-        reject(new Error('Request timed out after 120 seconds'));
-      }, 110000);
-
-      window.Poe.registerHandler(handlerName, function(result) {
-        var msg = result.responses && result.responses[0];
-        if (!msg) return;
-        if (msg.status === 'error') {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-          reject(new Error(msg.statusText || '分析時發生錯誤'));
-          return;
-        }
-        if (msg.status === 'incomplete') {
-          var mid = sanitizeModelOutput(msg.content);
-          if (mid) {
-            var midShow = pageTotal > 1 ? ('## 第 ' + pageIndex + ' 頁\n\n' + mid) : mid;
-            var prev = window.__hwParts || [];
-            currentContent = sanitizeModelOutput(prev.concat([midShow]).join('\n\n'));
-            loadingSection.style.display = 'none';
-            renderCurrentResult(currentContent, false);
-          }
-          return;
-        }
-        if (msg.status === 'complete') {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-          var clean = sanitizeModelOutput(msg.content);
-          if (pageTotal > 1 && clean) clean = '## 第 ' + pageIndex + ' 頁\n\n' + clean;
-          resolve(clean || '');
-        }
-      });
-
-      window.Poe.sendUserMessage('@' + usedModel + ' ' + buildPrompt(pageIndex, pageTotal), {
-        handler: handlerName,
-        stream: true,
-        openChat: false,
-        attachments: [file],
-        parameters: {}
-      }).catch(function(err) {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
-        reject(err);
-      });
+      var r = new FileReader();
+      r.onload = function() { resolve(r.result); };
+      r.onerror = function() { reject(new Error('讀取相片失敗')); };
+      r.readAsDataURL(file);
     });
+  }
+
+  async function askOnePage(file, pageIndex, pageTotal) {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function() { ctrl.abort(); }, 110000);
+    try {
+      var dataUrl = await fileToDataUrl(file);
+      var res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          model: usedModel,
+          stream: true,
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: buildPrompt(pageIndex, pageTotal) },
+            { type: 'image_url', image_url: { url: dataUrl } }
+          ] }]
+        })
+      });
+      if (!res.ok || !res.body) {
+        var t = ''; try { t = await res.text(); } catch (_e) {}
+        var em = '分析時發生錯誤（' + res.status + '）';
+        try { var j = JSON.parse(t); if (j && j.error) em = typeof j.error === 'string' ? j.error : (j.error.message || em); } catch (_e) {}
+        throw new Error(em);
+      }
+      var reader = res.body.getReader();
+      var dec = new TextDecoder();
+      var buf = '', full = '';
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buf += dec.decode(chunk.value, { stream: true });
+        var lines = buf.split('\n');
+        buf = lines.pop();
+        for (var k = 0; k < lines.length; k++) {
+          var line = lines[k].trim();
+          if (line.indexOf('data:') !== 0) continue;
+          var d = line.slice(5).trim();
+          if (!d || d === '[DONE]') continue;
+          try {
+            var ev = JSON.parse(d);
+            if (ev.error) throw new Error(ev.error.message || '分析時發生錯誤');
+            var delta = ev.choices && ev.choices[0] && ev.choices[0].delta && ev.choices[0].delta.content;
+            if (delta) full += delta;
+          } catch (e) { if (e && e.message && !(e instanceof SyntaxError)) throw e; }
+        }
+        var mid = sanitizeModelOutput(full);
+        if (mid) {
+          var midShow = pageTotal > 1 ? ('## 第 ' + pageIndex + ' 頁\n\n' + mid) : mid;
+          var prev = window.__hwParts || [];
+          currentContent = sanitizeModelOutput(prev.concat([midShow]).join('\n\n'));
+          loadingSection.style.display = 'none';
+          renderCurrentResult(currentContent, false);
+        }
+      }
+      var clean = sanitizeModelOutput(full);
+      if (pageTotal > 1 && clean) clean = '## 第 ' + pageIndex + ' 頁\n\n' + clean;
+      return clean || '';
+    } catch (err) {
+      if (err && err.name === 'AbortError') throw new Error('Request timed out after 120 seconds');
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
   function renderCurrentResult(content, isComplete) {
     currentResult.style.display = 'block';
