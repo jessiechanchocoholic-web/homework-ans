@@ -318,6 +318,48 @@
 </style>
 </head>
 <body>
+<style>
+#pwGate{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffe4ef,#e0f0ff);font-family:inherit}
+#pwGate .pw-card{background:#fff;border-radius:24px;padding:28px 24px;width:min(340px,88vw);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+#pwGate .pw-emoji{font-size:48px}
+#pwGate h2{margin:8px 0 4px;font-size:20px;color:#444}
+#pwGate p{margin:0 0 14px;color:#888;font-size:14px;min-height:1em}
+#pwGate input{width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid #ffc2d9;border-radius:14px;font-size:16px;outline:none;text-align:center}
+#pwGate input:focus{border-color:#ff8fb8}
+#pwGate button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:14px;background:#ff8fb8;color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+#pwLogout{position:fixed;right:10px;bottom:10px;z-index:50;border:0;background:rgba(255,255,255,.85);border-radius:999px;padding:6px 12px;font-size:12px;color:#888;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+</style>
+<div id="pwGate"><form class="pw-card" id="pwForm">
+  <div class="pw-emoji">🐣🔒</div>
+  <h2>請輸入密碼</h2>
+  <p id="pwMsg">問老師攞密碼，每部機輸入一次就得 😊</p>
+  <input id="pwInput" type="password" autocomplete="current-password" placeholder="密碼" required>
+  <button type="submit">開始 ✨</button>
+</form></div>
+<button id="pwLogout" type="button" title="登出／更改密碼">🔑 更改密碼</button>
+<script>
+  var APP_PW_KEY = 'hw_app_password';
+  function getAppPassword() { try { return localStorage.getItem(APP_PW_KEY) || ''; } catch (_e) { return ''; } }
+  function clearAppPassword() { try { localStorage.removeItem(APP_PW_KEY); } catch (_e) {} }
+  function showPwGate(msg) {
+    var g = document.getElementById('pwGate');
+    if (msg) document.getElementById('pwMsg').textContent = msg;
+    g.style.display = 'flex';
+    var i = document.getElementById('pwInput'); i.value = ''; setTimeout(function() { i.focus(); }, 50);
+  }
+  document.getElementById('pwForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var v = document.getElementById('pwInput').value.trim();
+    if (!v) return;
+    try { localStorage.setItem(APP_PW_KEY, v); } catch (_e) {}
+    document.getElementById('pwGate').style.display = 'none';
+  });
+  document.getElementById('pwLogout').addEventListener('click', function() {
+    clearAppPassword(); showPwGate('請輸入新密碼 🔑');
+  });
+  if (!getAppPassword()) showPwGate();
+</script>
+
 <div class="app">
   <!-- Header -->
   <div class="header">
@@ -679,7 +721,7 @@
       var dataUrl = await fileToDataUrl(file);
       var res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-App-Password': getAppPassword() },
         signal: ctrl.signal,
         body: JSON.stringify({
           model: usedModel,
@@ -690,6 +732,11 @@
           ] }]
         })
       });
+      if (res.status === 401) {
+        clearAppPassword();
+        showPwGate('密碼唔啱或者已更改，請再輸入一次 🔑');
+        throw new Error('密碼唔啱，請輸入正確密碼後再撳一次。');
+      }
       if (!res.ok || !res.body) {
         var t = ''; try { t = await res.text(); } catch (_e) {}
         var em = '分析時發生錯誤（' + res.status + '）';
