@@ -659,7 +659,7 @@
       '- 用繁體中文；每題解釋最多 2 句\n' +
       '- 禁止輸出 thinking／reasoning／思考過程／code／三個反引號\n' +
       '- 已有答案就指出啱定錯\n' +
-      '- 文字／計算題：簡短解釋後必須有「### 學生列式答案」：先完整橫式，再每行以 = 開頭簡化，最後一句中文答案＋單位\n' +
+      '- 文字／計算題：簡短解釋後必須有「### 學生列式答案」：先完整橫式，再每行以 = 開頭簡化，最後一句中文答案＋單位（答句獨立一行）；列式完之後必須留一個空行，先再寫下一題，下一題題號例如 (11) 要另起一段，唔好寫入列式框\n' +
       '- 直接答，唔使開場白；盡量短，唔好長篇推理';
   }
 
@@ -986,15 +986,46 @@
       return '<h3' + attrs + '>' + nice + '</h3>';
     });
     out = out.replace(/(<h3[^>]*class="[^"]*(?:answer-box-title|student-work-title|work-steps-title)[^"]*"[^>]*>[\s\S]*?<\/h3>)([\s\S]*?)(?=<h[123]\b|$)/gi, function(_m, h3, rest) {
-      return '<div class="answer-box student-work work-steps">' + h3 + formatStudentWorkLines(rest) + '</div>';
+      var cut = splitStudentWork(rest);
+      return '<div class="answer-box student-work work-steps">' + h3 + formatStudentWorkLines(cut.box) + '</div>' + cut.after;
     });
     return out;
   }
 
+
+  /* 方框只包列式：遇到 <hr>、空行後嘅新段落（除非以 = 開頭）、或題號 (11)／(11)(a)／第11題／11. 就收框 */
+  var QUESTION_START_RE = /^\s*(?:\(\s*\d+\s*\)|（\s*\d+\s*）|第\s*\d+\s*題|Q\s*\d+|\d+\s*[\.、．]\s|\d+\s*\(|\(\s*[a-z]\s*\))/i;
+  function blockText(htmlFrag) {
+    var t = String(htmlFrag || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|li|div)>/gi, '\n').replace(/<[^>]+>/g, '');
+    var d = document.createElement('div'); d.innerHTML = t; return (d.textContent || '');
+  }
+  function splitStudentWork(rest) {
+    var html = String(rest || '');
+    var blockRe = /\s*(<hr\b[^>]*>|<(p|ul|ol|blockquote|table|pre|div)\b[\s\S]*?<\/\2>)/gy;
+    var box = '', pos = 0, count = 0, m;
+    while ((m = blockRe.exec(html))) {
+      var blk = m[1];
+      if (/^<hr/i.test(blk)) break;
+      var lines = blockText(blk).split('\n').map(function(x) { return x.trim(); }).filter(Boolean);
+      if (count > 0 && !(lines[0] && /^=/.test(lines[0]))) break;
+      // 同一段入面出現題號：喺嗰行切開
+      var qi = -1;
+      for (var i = 1; i < lines.length; i++) { if (QUESTION_START_RE.test(lines[i])) { qi = i; break; } }
+      if (qi > 0) {
+        box += '<p>' + lines.slice(0, qi).map(escapeHtml).join('<br>') + '</p>';
+        var tail = lines.slice(qi).map(escapeHtml).join('<br>');
+        return { box: box, after: '<p>' + tail + '</p>' + html.slice(blockRe.lastIndex) };
+      }
+      if (count === 0 && lines[0] && QUESTION_START_RE.test(lines[0]) && !/[=×÷+\-]/.test(lines[0])) break;
+      box += blk; pos = blockRe.lastIndex; count++;
+    }
+    return { box: box, after: html.slice(pos) };
+  }
+
   function formatStudentWorkLines(restHtml) {
-    var tmp = document.createElement('div');
-    tmp.innerHTML = String(restHtml || '');
-    var text = (tmp.innerText || tmp.textContent || '').replace(/\r/g, '');
+    var text = blockText(restHtml).replace(/\r/g, '');
+    // 「= 51水池…」：數字／單位後緊接中文 → 拆成新一行
+    text = text.replace(/^(=[^\n\u4e00-\u9fff]*?[\d)）²³a-zA-Z])\s*([\u4e00-\u9fff][^\n]*)$/gm, '$1\n$2');
     var rawLines = text.split('\n');
     var lines = [];
     for (var i = 0; i < rawLines.length; i++) {
