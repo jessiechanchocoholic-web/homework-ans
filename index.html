@@ -108,6 +108,11 @@
   .img-count-label { text-align: center; font-size: 12px; color: var(--text-muted); }
 
   /* Buttons */
+  .model-bar { margin-top: 14px; }
+  .model-bar label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .model-bar select { width: 100%; padding: 12px; font-size: 16px; font-family: 'Noto Sans TC', sans-serif; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: inherit; }
+  .model-bar .model-hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+  .result-header .model-tag { margin-left: auto; font-size: 12px; color: var(--text-muted); }
   .action-bar { margin-top: 14px; animation: fadeUp 0.6s ease-out 0.2s both; }
   .btn-main { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; transition: all 0.3s ease; box-shadow: 0 4px 16px var(--accent-glow); position: relative; overflow: hidden; }
   .btn-main::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%); transform: translateX(-100%); transition: transform 0.5s ease; }
@@ -116,13 +121,6 @@
   .btn-main:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-main:disabled::after { display: none; }
   .btn-main i { font-size: 18px; }
-
-  /* Model selector */
-  .model-bar { margin-top: 14px; }
-  .model-bar label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-  .model-bar select { width: 100%; padding: 12px; font-size: 16px; font-family: 'Noto Sans TC', sans-serif; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: inherit; }
-  .model-bar .model-hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
-  .result-header .model-tag { margin-left: auto; font-size: 12px; color: var(--text-muted); }
 
   .btn-row { display: flex; gap: 10px; margin-top: 14px; }
   .btn-next { flex: 1; padding: 13px 10px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Noto Sans TC', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 3px 12px var(--accent-glow); }
@@ -158,9 +156,101 @@
   .result-card ul,.result-card ol { padding-left: 20px; margin: 6px 0; }
   .result-card li { margin: 3px 0; }
   .result-card strong { color: var(--accent); font-weight: 700; }
-  .result-card code { background: var(--bg-accent); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Courier New', monospace; }
-  .result-card pre { background: var(--bg-accent); padding: 10px 14px; border-radius: var(--radius-sm); overflow-x: auto; margin: 8px 0; }
-  .result-card pre code { background: none; padding: 0; }
+  .result-card code { background: transparent; padding: 0; font-size: inherit; font-family: inherit; color: inherit; }
+  .result-card pre { display: none !important; }
+  .result-card pre code { display: none !important; }
+  /* HW-UX-02：學生列式答案／答案格 — 圓角方框＋=垂直對齊（對齊 Jessie 第7題） */
+  .result-card .answer-box,
+  .result-card .student-work,
+  .result-card .work-steps {
+    margin: 14px 0 18px;
+    padding: 0 0 14px;
+    background: #F3F3F3;
+    border: 2px solid rgba(45, 27, 14, 0.18);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7);
+  }
+  html.dark .result-card .answer-box,
+  html.dark .result-card .student-work,
+  html.dark .result-card .work-steps {
+    background: var(--bg-accent);
+    border-color: rgba(245, 230, 216, 0.22);
+  }
+  .result-card h3.answer-box-title,
+  .result-card h3.student-work-title,
+  .result-card h3.work-steps-title,
+  .result-card .answer-box > h3:first-child,
+  .result-card .student-work > h3:first-child,
+  .result-card .work-steps > h3:first-child {
+    margin: 0 0 8px !important;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.18), rgba(255, 165, 0, 0.08));
+    border-bottom: 1px solid rgba(255, 107, 53, 0.22);
+    color: var(--accent-dark);
+    font-size: 15px;
+    font-weight: 800;
+  }
+  html.dark .result-card h3.answer-box-title,
+  html.dark .result-card h3.student-work-title,
+  html.dark .result-card h3.work-steps-title,
+  html.dark .result-card .answer-box > h3:first-child,
+  html.dark .result-card .student-work > h3:first-child,
+  html.dark .result-card .work-steps > h3:first-child { color: var(--accent-light); }
+  .result-card .answer-box .student-lines,
+  .result-card .student-work .student-lines,
+  .result-card .work-steps .student-lines {
+    margin: 2px 16px 4px;
+    padding: 4px 8px 2px;
+    font-family: "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK TC", "Noto Sans TC", monospace;
+    font-size: 16px;
+    line-height: 1.9;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .result-card .answer-box .student-lines .eq-line,
+  .result-card .student-work .student-lines .eq-line,
+  .result-card .work-steps .student-lines .eq-line {
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  /* 其後以 = 開頭嘅行：hanging indent，令 = 垂直對齊 */
+  .result-card .answer-box .student-lines .eq-line.is-eq,
+  .result-card .student-work .student-lines .eq-line.is-eq,
+  .result-card .work-steps .student-lines .eq-line.is-eq {
+    padding-left: 1.15em;
+    text-indent: -1.15em;
+  }
+  .result-card .answer-box .student-lines .eq-line.is-first,
+  .result-card .student-work .student-lines .eq-line.is-first,
+  .result-card .work-steps .student-lines .eq-line.is-first {
+    padding-left: 0;
+    text-indent: 0;
+    font-weight: 700;
+  }
+  .result-card .answer-box .student-lines .final-line,
+  .result-card .student-work .student-lines .final-line,
+  .result-card .work-steps .student-lines .final-line {
+    display: block;
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(45, 27, 14, 0.12);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--accent-dark);
+    white-space: normal;
+  }
+  html.dark .result-card .answer-box .student-lines .final-line,
+  html.dark .result-card .student-work .student-lines .final-line,
+  html.dark .result-card .work-steps .student-lines .final-line { color: var(--accent-light); }
+  .result-card .answer-box > *:not(h3):not(.student-lines),
+  .result-card .student-work > *:not(h3):not(.student-lines),
+  .result-card .work-steps > *:not(h3):not(.student-lines) {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
   .result-card blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--text-secondary); }
   .result-card table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
   .result-card th,.result-card td { padding: 7px 10px; border: 1px solid var(--border); text-align: left; }
@@ -258,18 +348,15 @@
     </div>
   </div>
 
-  <!-- Model selector -->
+  <!-- Analyze button -->
   <div class="model-bar">
     <label for="modelSelect">揀 AI</label>
     <select id="modelSelect">
-      <option value="GPT-4o-mini">慳錢 GPT-4o-mini</option>
-      <option value="Claude-Haiku-5.5" selected>平衡 Claude-Haiku-5.5</option>
-      <option value="Claude-Sonnet-5.5">最準 Claude-Sonnet-5.5</option>
+      <option value="Claude-Haiku-5.5" selected>準確 Claude-Haiku-5.5（預設）</option>
+      <option value="Claude-Sonnet-5.5">最準 Claude-Sonnet-5.5（慢·貴）</option>
     </select>
-    <div class="model-hint">難嘅數學題建議揀「最準」</div>
+    <div class="model-hint">預設已準確；每頁會自動分開送，唔會超時。特難題先揀「最準」</div>
   </div>
-
-  <!-- Analyze button -->
   <div class="action-bar" id="actionBar">
     <button class="btn-main" id="btnAnalyze" disabled>
       <i class="fas fa-magnifying-glass"></i>
@@ -339,7 +426,10 @@
   var imgCountLabel = document.getElementById('imgCountLabel');
   var btnAnalyze = document.getElementById('btnAnalyze');
   var modelSelect = document.getElementById('modelSelect');
+  var MODEL_KEY = 'hwModel2';
   var usedModel = '';
+  try { var savedModel = localStorage.getItem(MODEL_KEY); if (savedModel && modelSelect.querySelector('option[value="' + savedModel + '"]')) modelSelect.value = savedModel; } catch (_e) {}
+  modelSelect.addEventListener('change', function() { try { localStorage.setItem(MODEL_KEY, modelSelect.value); } catch (_e) {} });
   var actionBar = document.getElementById('actionBar');
   var uploadSection = document.getElementById('uploadSection');
   var loadingSection = document.getElementById('loadingSection');
@@ -373,24 +463,80 @@
     fileInput.value = '';
   });
 
+  // 自動壓縮手機大相（最長邊 1600px、JPEG 0.8），避免 AppToPub 傳送超時卡死，同時保留清晰文字
+  function compressImageFile(file) {
+    return new Promise(function(resolve) {
+      var reader = new FileReader();
+      reader.onerror = function() { resolve(null); };
+      reader.onload = function(ev) {
+        var dataUrl = ev.target.result;
+        var img = new Image();
+        img.onerror = function() {
+          resolve({ file: file, previewUrl: dataUrl });
+        };
+        img.onload = function() {
+          try {
+            var maxDim = 1600;
+            var w = img.naturalWidth || img.width;
+            var h = img.naturalHeight || img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w >= h) {
+                h = Math.round(h * (maxDim / w));
+                w = maxDim;
+              } else {
+                w = Math.round(w * (maxDim / h));
+                h = maxDim;
+              }
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            var compressedDataUrl = canvas.toDataURL('image/jpeg', 0.80);
+            canvas.toBlob(function(blob) {
+              if (!blob) {
+                resolve({ file: file, previewUrl: dataUrl });
+                return;
+              }
+              var baseName = (file.name || 'homework').replace(/\.[^.]+$/, '');
+              var compressedFile;
+              try {
+                compressedFile = new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
+              } catch (_e) {
+                blob.name = baseName + '.jpg';
+                compressedFile = blob;
+              }
+              resolve({ file: compressedFile, previewUrl: compressedDataUrl });
+            }, 'image/jpeg', 0.80);
+          } catch (_err) {
+            resolve({ file: file, previewUrl: dataUrl });
+          }
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function addFiles(files) {
-    var imgs = files.filter(function(f) { return f.type.startsWith('image/'); });
+    var imgs = files.filter(function(f) { return !f.type || f.type.startsWith('image/'); });
     if (imgs.length === 0) { showNotice('請選擇圖片檔案'); return; }
 
     var remaining = 4 - selectedFiles.length;
     if (remaining <= 0) { showNotice('最多只可以上傳 4 張相片'); return; }
     var toAdd = imgs.slice(0, remaining);
 
-    var loaded = 0;
-    toAdd.forEach(function(file) {
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        selectedFiles.push(file);
-        previewUrls.push(ev.target.result);
-        loaded++;
-        if (loaded === toAdd.length) renderGrid();
-      };
-      reader.readAsDataURL(file);
+    Promise.all(toAdd.map(compressImageFile)).then(function(results) {
+      results.forEach(function(item) {
+        if (item) {
+          selectedFiles.push(item.file);
+          previewUrls.push(item.previewUrl);
+        }
+      });
+      renderGrid();
     });
   }
 
@@ -460,18 +606,16 @@
       return;
     }
     if (msg.status === 'incomplete') {
-      currentContent = msg.content;
-      var cleaned = cleanThinking(msg.content);
-      if (cleaned) {
-        loadingSection.style.display = 'none';
-        renderCurrentResult(msg.content, false);
-      }
+      currentContent = sanitizeModelOutput(msg.content);
+      if (!currentContent) { loadingSection.style.display = 'block'; return; } // 仲喺 thinking：只顯示載入中
+      loadingSection.style.display = 'none';
+      renderCurrentResult(currentContent, false);
       return;
     }
     if (msg.status === 'complete') {
       loadingSection.style.display = 'none';
-      currentContent = msg.content;
-      renderCurrentResult(msg.content, true);
+      currentContent = sanitizeModelOutput(msg.content);
+      renderCurrentResult(currentContent, true);
       isAnalyzing = false;
     }
   });
@@ -485,39 +629,126 @@
     currentResult.innerHTML = '';
     tipsSection.style.display = 'none';
     currentContent = '';
-
-    var pageWord = selectedFiles.length > 1 ? selectedFiles.length + '頁' : '呢張';
-    var prompt = '請睇' + pageWord + '功課相片，逐題俾正確答案同簡短解釋。\n' +
-      '- 用繁體中文，逐題清楚列出\n' +
-      '- 功課已有答案就指出啱定錯\n' +
-      '- 數學要列式同顯示計算步驟\n' +
-      '- 多頁要逐頁標明';
     usedModel = modelSelect.value;
+    window.__hwParts = [];
 
+    var files = selectedFiles.slice();
+    var parts = [];
     try {
-      await window.Poe.sendUserMessage('@' + usedModel + ' ' + prompt, {
-        handler: 'answer-handler',
-        stream: true,
-        openChat: false,
-        attachments: selectedFiles.slice(),
-        parameters: {}
-      });
+      for (var i = 0; i < files.length; i++) {
+        btnAnalyze.querySelector('span').textContent = files.length > 1
+          ? ('分析中⋯ ' + (i + 1) + '/' + files.length + ' 頁')
+          : '分析中⋯';
+        loadingSection.style.display = 'block';
+        var one = await askOnePage(files[i], i + 1, files.length);
+        if (one) {
+          parts.push(one);
+          window.__hwParts = parts.slice();
+          currentContent = sanitizeModelOutput(parts.join('\n\n'));
+          loadingSection.style.display = 'none';
+          renderCurrentResult(currentContent, false);
+        }
+      }
+      loadingSection.style.display = 'none';
+      currentContent = sanitizeModelOutput(parts.join('\n\n'));
+      if (!currentContent) {
+        showError('冇收到答案。請再撳一次。');
+        isAnalyzing = false;
+        resetAnalyzeBtn();
+        return;
+      }
+      renderCurrentResult(currentContent, true);
+      isAnalyzing = false;
     } catch (err) {
       loadingSection.style.display = 'none';
       isAnalyzing = false;
       var errorMsg = '發送失敗';
       if (err && err.errorType === 'USER_REJECTED_CONFIRMATION') errorMsg = '已取消操作';
-      else if (err && err.message) errorMsg = err.message;
+      else if (err && /timed?\s*out|timeout|120/i.test(String(err.message || err))) {
+        errorMsg = '呢頁超時，請再撳一次（已完成嘅頁會保留）。';
+      } else if (err && err.message) errorMsg = err.message;
       showError(errorMsg);
       resetAnalyzeBtn();
     }
   }
 
-  /* ── Render current result ── */
+  function buildPrompt(pageIndex, pageTotal) {
+    var head = pageTotal > 1
+      ? ('呢張係第 ' + pageIndex + '／' + pageTotal + ' 頁。只答呢一頁，務必簡短。\n')
+      : '請睇呢張功課相片，逐題俾正確答案同簡短解釋。\n';
+    return head +
+      '【輸出規則｜必須遵守】\n' +
+      '- 用繁體中文；每題解釋最多 2 句\n' +
+      '- 禁止輸出 thinking／reasoning／思考過程／code／三個反引號\n' +
+      '- 已有答案就指出啱定錯\n' +
+      '- 文字／計算題：簡短解釋後必須有「### 學生列式答案」：先完整橫式，再每行以 = 開頭簡化，最後一句中文答案＋單位\n' +
+      '- 直接答，唔使開場白；盡量短，唔好長篇推理';
+  }
+
+  function askOnePage(file, pageIndex, pageTotal) {
+    return new Promise(function(resolve, reject) {
+      var handlerName = 'answer-page-' + pageIndex + '-' + Date.now();
+      var settled = false;
+      var timer = setTimeout(function() {
+        if (settled) return;
+        settled = true;
+        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
+        reject(new Error('Request timed out after 120 seconds'));
+      }, 110000);
+
+      window.Poe.registerHandler(handlerName, function(result) {
+        var msg = result.responses && result.responses[0];
+        if (!msg) return;
+        if (msg.status === 'error') {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
+          reject(new Error(msg.statusText || '分析時發生錯誤'));
+          return;
+        }
+        if (msg.status === 'incomplete') {
+          var mid = sanitizeModelOutput(msg.content);
+          if (mid) {
+            var midShow = pageTotal > 1 ? ('## 第 ' + pageIndex + ' 頁\n\n' + mid) : mid;
+            var prev = window.__hwParts || [];
+            currentContent = sanitizeModelOutput(prev.concat([midShow]).join('\n\n'));
+            loadingSection.style.display = 'none';
+            renderCurrentResult(currentContent, false);
+          }
+          return;
+        }
+        if (msg.status === 'complete') {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
+          var clean = sanitizeModelOutput(msg.content);
+          if (pageTotal > 1 && clean) clean = '## 第 ' + pageIndex + ' 頁\n\n' + clean;
+          resolve(clean || '');
+        }
+      });
+
+      window.Poe.sendUserMessage('@' + usedModel + ' ' + buildPrompt(pageIndex, pageTotal), {
+        handler: handlerName,
+        stream: true,
+        openChat: false,
+        attachments: [file],
+        parameters: {}
+      }).catch(function(err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        try { if (window.Poe.unregisterHandler) window.Poe.unregisterHandler(handlerName); } catch (_e) {}
+        reject(err);
+      });
+    });
+  }
   function renderCurrentResult(content, isComplete) {
     currentResult.style.display = 'block';
+    var clean = sanitizeModelOutput(content);
     var parsed = '';
-    try { parsed = marked.parse(cleanThinking(content) || ''); } catch (_e) { parsed = (content || '').replace(/\n/g, '<br>'); }
+    try { parsed = enhanceAnswerHtml(marked.parse(clean || '')); } catch (_e) { parsed = (clean || '').replace(/\n/g, '<br>'); }
 
     var iconHtml = isComplete
       ? '<div class="icon-circle ok"><i class="fas fa-check"></i></div>'
@@ -709,40 +940,113 @@
   }
 
   /* ── Helpers ── */
-  function cleanThinking(text) {
-    if (!text) return '';
-    text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    text = text.replace(/<antThinking>[\s\S]*?<\/antThinking>/gi, '');
-    text = text.replace(/<details>\s*<summary>[^<]*(?:think|思考|reason|推理)[^<]*<\/summary>[\s\S]*?<\/details>/gi, '');
-    var lines = text.split('\n');
-    var result = [];
-    var inThinking = false;
-    for (var i = 0; i < lines.length; i++) {
-      var trimmed = lines[i].trim();
-      if (/^\*{1,3}Thinking\.{0,3}\*{1,3}$/.test(trimmed)) {
-        inThinking = true;
-        continue;
-      }
-      if (inThinking) {
-        if (trimmed === '' || trimmed.startsWith('>')) continue;
-        inThinking = false;
-        result.push(lines[i]);
-      } else {
-        result.push(lines[i]);
-      }
-    }
-    return result.join('\n').trim();
-  }
   function escapeHtml(s) {
     var d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
   }
+
+  /* HW-UX-01／02：剝 thinking／code fence，保留學生列式答案／答案格同列式文字 */
+  function sanitizeModelOutput(raw) {
+    var s = String(raw == null ? '' : raw);
+    // 完整 XML-ish thinking／reasoning 標籤
+    s = s.replace(/<(thinking|think|reasoning|reflection|scratchpad|antthinking|inner_monologue|thought)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
+    // 串流中途未關閉嘅同名標籤：由開標籤去到結尾
+    s = s.replace(/<(thinking|think|reasoning|reflection|scratchpad|antthinking|inner_monologue|thought)\b[^>]*>[\s\S]*$/gi, '');
+    // 標籤 thinking／reasoning 嘅 fenced block
+    s = s.replace(/```(?:thinking|reasoning|thought|reflection|scratchpad|thoughts)[^\n]*\n[\s\S]*?```/gi, '');
+    s = s.replace(/```(?:thinking|reasoning|thought|reflection|scratchpad|thoughts)[^\n]*\n[\s\S]*$/gi, '');
+    // 其餘 fenced code：拆開 fence，保留入面文字（數學列式唔靠 code block）
+    s = s.replace(/```[\w+-]*[^\n]*\n?([\s\S]*?)```/g, function(_m, inner) {
+      return '\n' + String(inner || '').replace(/\s+$/, '') + '\n';
+    });
+    s = s.replace(/```[\w+-]*[^\n]*\n?([\s\S]*)$/g, function(_m, inner) {
+      return '\n' + String(inner || '');
+    });
+    // 過長 inline code（短嘅如變數名可留）
+    s = s.replace(/`([^`\n]{40,})`/g, '$1');
+    // 行首 Thinking:／Reasoning:／思考過程 等長段
+    s = s.replace(/(^|\n)(?:Thinking|Reasoning|Inner\s*monologue|思考過程|推理過程|內心獨白)\s*[:：][^\n]*(?:\n(?!\s*(?:#{1,3}\s|[-*•]|\d+[\.\)、]|第\s*\d))[^\n]*)*/gi, '$1');
+    // Poe 推理模型格式：*Thinking...* ＋ 一大段 > 引用（串流中途都要收起）
+    s = s.replace(/^\s*(?:[*_]{1,2})?\s*(?:Thinking|Reasoning|思考中|正在思考)[^\n]*\n?/i, '');
+    s = s.replace(/^(?:\s*>[^\n]*(?:\n|$))+/, '');
+    s = s.replace(/(^|\n)\s*(?:[*_]{1,2})?\s*(?:Thinking|Reasoning)(?:\.\.\.|…)?\s*(?:[*_]{1,2})?\s*\n(?:\s*>[^\n]*(?:\n|$))*/gi, '$1');
+    s = s.replace(/^\s*Thought for [^\n]*\n?/i, '');
+    // 多餘空行
+    s = s.replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+    return s;
+  }
+
+  /* HW-UX-02：為「### 學生列式答案」（兼舊「列式步驟答案／答案格」）加圓角答案框＋=對齊 */
+  function enhanceAnswerHtml(html) {
+    var out = String(html || '');
+    out = out.replace(/<h3(\s[^>]*)?>\s*([^<]*(?:學生列式答案|列式步驟答案|答案格)[^<]*)\s*<\/h3>/gi, function(_m, attrs, title) {
+      attrs = attrs || '';
+      var clsAdd = 'answer-box-title student-work-title work-steps-title';
+      if (/class\s*=/i.test(attrs)) {
+        attrs = attrs.replace(/class\s*=\s*(["'])([^"']*)\1/i, function(__, q, c) {
+          return 'class=' + q + (c + ' ' + clsAdd).replace(/\s+/g, ' ').trim() + q;
+        });
+      } else {
+        attrs += ' class="' + clsAdd + '"';
+      }
+      var nice = /學生列式答案/.test(title) ? title : '學生列式答案';
+      return '<h3' + attrs + '>' + nice + '</h3>';
+    });
+    out = out.replace(/(<h3[^>]*class="[^"]*(?:answer-box-title|student-work-title|work-steps-title)[^"]*"[^>]*>[\s\S]*?<\/h3>)([\s\S]*?)(?=<h[123]\b|$)/gi, function(_m, h3, rest) {
+      return '<div class="answer-box student-work work-steps">' + h3 + formatStudentWorkLines(rest) + '</div>';
+    });
+    return out;
+  }
+
+  function formatStudentWorkLines(restHtml) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = String(restHtml || '');
+    var text = (tmp.innerText || tmp.textContent || '').replace(/\r/g, '');
+    var rawLines = text.split('\n');
+    var lines = [];
+    for (var i = 0; i < rawLines.length; i++) {
+      var t = String(rawLines[i] || '').replace(/\s+$/g, '').trim();
+      if (!t) continue;
+      if (/^(學生列式答案|列式步驟答案|答案格)$/.test(t)) continue;
+      // 去掉列表符號殘餘
+      t = t.replace(/^[-*•]\s+/, '').replace(/^\d+[\.\)、]\s+/, '');
+      if (t) lines.push(t);
+    }
+    if (lines.length === 0) {
+      var cleaned = String(restHtml || '').replace(/^\s+|\s+$/g, '');
+      return cleaned || '';
+    }
+    var parts = [];
+    for (var j = 0; j < lines.length; j++) {
+      var line = lines[j];
+      var isLast = j === lines.length - 1;
+      var startsEq = /^=\s*/.test(line);
+      var looksFinal = isLast && !startsEq && /[\u4e00-\u9fff]/.test(line);
+      if (looksFinal) {
+        parts.push('<span class="final-line">' + escapeHtml(line) + '</span>');
+      } else if (startsEq) {
+        // 正規化：= 後面一個空格
+        var normalized = line.replace(/^=\s*/, '= ');
+        parts.push('<span class="eq-line is-eq">' + escapeHtml(normalized) + '</span>');
+      } else if (j === 0) {
+        parts.push('<span class="eq-line is-first">' + escapeHtml(line) + '</span>');
+      } else {
+        parts.push('<span class="eq-line">' + escapeHtml(line) + '</span>');
+      }
+    }
+    return '<div class="student-lines">' + parts.join('') + '</div>';
+  }
+
   function stripToText(md) {
-    return (md || '').replace(/[#*_`~>\-|[\]()!]/g, '').replace(/\n+/g, ' ').trim();
+    return sanitizeModelOutput(md || '').replace(/[#*_`~>\-|[\]()!]/g, '').replace(/\n+/g, ' ').trim();
   }
   function safeMarkdown(content) {
-    try { return marked.parse(cleanThinking(content) || ''); } catch (_e) { return escapeHtml(content || ''); }
+    try {
+      return enhanceAnswerHtml(marked.parse(sanitizeModelOutput(content || '')));
+    } catch (_e) {
+      return escapeHtml(sanitizeModelOutput(content || ''));
+    }
   }
   function formatTime(d) {
     var h = d.getHours();
@@ -755,3 +1059,4 @@
 </script>
 </body>
 </html>
+
